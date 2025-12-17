@@ -76,11 +76,11 @@ class AutoTradingBot {
         );
         this.balanceChecker = new BalanceChecker();
 
-        this.priceThreshold = parseFloat(process.env.PRICE_DIFFERENCE_THRESHOLD || '0.015');
-        this.stopLossAmount = parseFloat(process.env.STOP_LOSS_AMOUNT || '0.005');
-        this.takeProfitAmount = parseFloat(process.env.TAKE_PROFIT_AMOUNT || '0.01');
+        this.priceThreshold = parseFloat(process.env.PRICE_DIFFERENCE_THRESHOLD || '0.01');
+        this.stopLossAmount = parseFloat(process.env.STOP_LOSS_AMOUNT || '0.02');
+        this.takeProfitAmount = parseFloat(process.env.TAKE_PROFIT_AMOUNT || '0.03');
         this.tradeCooldown = parseInt(process.env.TRADE_COOLDOWN || '30') * 1000;
-        this.tradeAmount = parseFloat(process.env.DEFAULT_TRADE_AMOUNT || '5.0');
+        this.tradeAmount = parseFloat(process.env.DEFAULT_TRADE_AMOUNT || '0.10');
     }
 
     async start() {
