@@ -216,9 +216,32 @@ class AutoTradingBot {
             if (!market || !market.tokens || !Array.isArray(market.tokens)) return;
 
             for (const t of market.tokens) {
-                const assetId = String(t.token_id || t.tokenId || '');
-                const price = t.price != null ? parseFloat(String(t.price)) : NaN;
-                if (assetId && price && price > 0) {
+                // Normalize asset/token id from various fields
+                const assetId = String(
+                    t.clob_token_id ?? t.token_id ?? t.tokenId ?? ''
+                );
+                if (!assetId) continue;
+
+                // Only track prices for our UP/DOWN assets
+                if (assetId !== this.tokenIdUp && assetId !== this.tokenIdDown) continue;
+
+                let price: number | undefined;
+                // Try direct price field
+                if (t.price != null && !isNaN(parseFloat(t.price))) {
+                    price = parseFloat(t.price);
+                }
+                // Try best bid/ask mid
+                const bestBid = t.best_bid ?? t.bestBid ?? (t.bids?.[0]?.price);
+                const bestAsk = t.best_ask ?? t.bestAsk ?? (t.asks?.[0]?.price);
+                if (!price && bestBid != null && bestAsk != null) {
+                    const bidNum = parseFloat(String(bestBid));
+                    const askNum = parseFloat(String(bestAsk));
+                    if (!isNaN(bidNum) && !isNaN(askNum) && bidNum > 0 && askNum > 0) {
+                        price = (bidNum + askNum) / 2.0;
+                    }
+                }
+
+                if (price && price > 0) {
                     this.polymarketPrices.set(assetId, price);
                 }
             }
