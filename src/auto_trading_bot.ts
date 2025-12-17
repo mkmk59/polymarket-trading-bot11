@@ -58,6 +58,9 @@ class AutoTradingBot {
     private softwareWs: WebSocket | null = null;
     private polymarketWs: WebSocket | null = null;
     private isRunning: boolean = false;
+    private marketSlug: string | null = null;
+    private lastGammaFetch: number = 0;
+    private gammaFetchInterval: number = 10000;
 
     constructor() {
         const privateKey = process.env.PRIVATE_KEY;
@@ -141,6 +144,7 @@ class AutoTradingBot {
         const hour = now.getHours();
         const timeStr = hour === 0 ? '12am' : hour < 12 ? `${hour}am` : hour === 12 ? '12pm' : `${hour - 12}pm`;
         const slug = `bitcoin-up-or-down-${month}-${day}-${timeStr}-et`;
+        this.marketSlug = slug;
         
         console.log(`Searching for market: ${slug}`);
         
@@ -196,6 +200,30 @@ class AutoTradingBot {
         console.log(`Market found: ${market.question}`);
         console.log(`UP Token: ${this.tokenIdUp.substring(0, 20)}...`);
         console.log(`DOWN Token: ${this.tokenIdDown.substring(0, 20)}...`);
+    }
+
+    private async pollPolymarketPricesGamma() {
+        try {
+            if (!this.marketSlug) return;
+            const now = Date.now();
+            if (now - this.lastGammaFetch < this.gammaFetchInterval) return;
+
+            this.lastGammaFetch = now;
+            const resp = await fetch(`https://gamma-api.polymarket.com/markets?slug=${this.marketSlug}`);
+            const data: any = await resp.json();
+            const market = Array.isArray(data) && data.length > 0 ? data[0]
+                : (data?.data && Array.isArray(data.data) && data.data.length > 0 ? data.data[0] : null);
+            if (!market || !market.tokens || !Array.isArray(market.tokens)) return;
+
+            for (const t of market.tokens) {
+                const assetId = String(t.token_id || t.tokenId || '');
+                const price = t.price != null ? parseFloat(String(t.price)) : NaN;
+                if (assetId && price && price > 0) {
+                    this.polymarketPrices.set(assetId, price);
+                }
+            }
+        } catch (err) {
+        }
     }
 
     private async connectSoftwareWebSocket() {
@@ -321,6 +349,8 @@ class AutoTradingBot {
             if (!this.isRunning) return;
 
             const now = Date.now();
+            // Fallback: poll Gamma API for prices if WS hasn't populated yet
+            await this.pollPolymarketPricesGamma();
             
             if (now - this.lastBalanceCheck >= this.balanceCheckInterval) {
                 console.log('\n💰 Periodic balance check...');
