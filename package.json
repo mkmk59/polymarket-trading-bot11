@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/main.js",
+    "start": "node dist/auto_trading_bot.js",
     "dev": "ts-node src/main.ts",
     "auto-trade": "ts-node src/auto_trading_bot.ts",
     "check-balance": "ts-node src/check_balance.ts",
