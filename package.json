@@ -5,7 +5,7 @@
   "main": "dist/main.js",
   "scripts": {
     "build": "tsc",
-    "start": "node dist/auto_trading_bot.js",
+    "start": "node scripts/software_oracle_ws.js & node dist/auto_trading_bot.js",
     "dev": "ts-node src/main.ts",
     "auto-trade": "ts-node src/auto_trading_bot.ts",
     "check-balance": "ts-node src/check_balance.ts",
